@@ -1,0 +1,102 @@
+﻿@model Department
+
+@{
+    ViewData["Title"] = $"{Model.Name} Workload Report";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-bar-chart-fill"></i> @Model.Name Workload Report</h2>
+            <p class="text-muted mb-0">Detailed ticket distribution across staff members in this department.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to Departments</a>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-uppercase small fw-bold">Total Staff</h6>
+                    <h3 class="fw-bold text-dark">@(Model.Employees?.Count ?? 0)</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-uppercase small fw-bold">Active Department Tickets</h6>
+                    <h3 class="fw-bold text-warning">
+                        @(Model.Employees?
+                            .SelectMany(e => e.TicketAssignments)
+                            .Count(ta => ta.Ticket?.Status?.Name != "Resolved" && ta.Ticket?.Status?.Name != "Closed") ?? 0)
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-uppercase small fw-bold">Total Handled Tickets</h6>
+                    <h3 class="fw-bold text-primary">
+                        @(Model.Employees?
+                            .SelectMany(e => e.TicketAssignments)
+                            .Count() ?? 0)
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Workload Breakdown Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header text-white" style="background-color: var(--loa-blue, #0d6efd);">
+            <h5 class="mb-0">Staff Member Workload Breakdown</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Employees != null && Model.Employees.Any())
+            {
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Staff Name</th>
+                            <th>Email</th>
+                            <th>Active Tickets</th>
+                            <th>Resolved Tickets</th>
+                            <th>Total Assigned</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var emp in Model.Employees)
+                        {
+                            var activeCount = emp.TicketAssignments?
+                                .Count(ta => ta.Ticket?.Status?.Name != "Resolved" && ta.Ticket?.Status?.Name != "Closed") ?? 0;
+                            var resolvedCount = emp.TicketAssignments?
+                                .Count(ta => ta.Ticket?.Status?.Name == "Resolved" || ta.Ticket?.Status?.Name == "Closed") ?? 0;
+                            var totalCount = emp.TicketAssignments?.Count ?? 0;
+
+                            <tr>
+                                <td class="fw-bold">@emp.FirstName @emp.LastName</td>
+                                <td><a href="mailto:@emp.Email">@emp.Email</a></td>
+                                <td>
+                                    <span class="badge @(activeCount > 3 ? "bg-danger" : "bg-warning text-dark")">
+                                        @activeCount Active
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">@resolvedCount Resolved</span>
+                                </td>
+                                <td class="fw-bold">@totalCount</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted text-center my-4">No staff members assigned to this department yet.</p>
+            }
+        </div>
+    </div>
+</div>
