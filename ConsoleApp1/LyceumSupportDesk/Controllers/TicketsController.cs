@@ -217,4 +217,59 @@ public class TicketsController : Controller
 
         return RedirectToAction(nameof(Details), new { id = ticketId });
     }
+
+    // GET: Tickets/Details/5 (Updated to include TicketNotes)
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null) return NotFound();
+
+        var ticket = await _context.Tickets
+            .Include(t => t.Customer)
+            .Include(t => t.Status)
+            .Include(t => t.Priority)
+            .Include(t => t.Category)
+            .Include(t => t.TicketAssignments)
+                .ThenInclude(ta => ta.Employee)
+                    .ThenInclude(e => e.Department)
+            .Include(t => t.TicketNotes) // Include ticket notes/comments
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (ticket == null) return NotFound();
+
+        ViewBag.Statuses = new SelectList(await _context.TicketStatuses.ToListAsync(), "Id", "Name", ticket.StatusId);
+
+        ViewBag.EmployeeList = new SelectList(
+            await _context.Employees.Select(e => new { Id = e.Id, FullName = e.FirstName + " " + e.LastName }).ToListAsync(),
+            "Id",
+            "FullName"
+        );
+
+        return View(ticket);
+    }
+
+    // POST: Tickets/AddNote
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddNote(int ticketId, string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return RedirectToAction(nameof(Details), new { id = ticketId });
+        }
+
+        var ticket = await _context.Tickets.FindAsync(ticketId);
+        if (ticket == null) return NotFound();
+
+        var note = new TicketNote
+        {
+            TicketId = ticketId,
+            Content = content,
+            CreatedAt = DateTime.Now
+        };
+
+        _context.TicketNotes.Add(note);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction(nameof(Details), new { id = ticketId });
+    }
 }
