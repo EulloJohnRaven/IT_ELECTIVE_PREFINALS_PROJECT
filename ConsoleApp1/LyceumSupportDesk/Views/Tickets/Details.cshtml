@@ -1,38 +1,80 @@
 ﻿@model Ticket
 
 @{
-    ViewData["Title"] = "Ticket Details";
+    ViewData["Title"] = $"Ticket #{Model.Id} Details";
 }
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Ticket #@Model.Id Details</h2>
-        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        <h2>Ticket #@Model.Id: @Model.Subject</h2>
+        <a asp-action="Index" class="btn btn-secondary">Back to Tickets</a>
     </div>
 
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-dark text-white" style="background-color: var(--loa-blue) !important;">
-            <h4 class="mb-0">@Model.Subject</h4>
-        </div>
-        <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <strong>Customer:</strong> @(Model.Customer?.CompanyName ?? "N/A")<br />
-                    <strong>Contact:</strong> @(Model.Customer?.ContactName ?? "N/A")<br />
-                    <strong>Category:</strong> @(Model.Category?.Name ?? "N/A")
+    <div class="row">
+        <!-- Main Details -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header text-white" style="background-color: var(--loa-blue) !important;">
+                    <h5 class="mb-0">Ticket Overview</h5>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <strong>Status:</strong> <span class="badge bg-info text-dark">@(Model.Status?.Name ?? "N/A")</span><br />
-                    <strong>Priority:</strong> <span class="badge bg-warning text-dark">@(Model.Priority?.Name ?? "N/A")</span><br />
-                    <strong>Created:</strong> @Model.CreatedAt
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="text-muted fw-bold small">SUBJECT</label>
+                        <p class="fs-5 fw-bold text-dark">@Model.Subject</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-muted fw-bold small">DESCRIPTION</label>
+                        <p class="p-3 bg-light rounded border text-dark">@Model.Description</p>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <label class="text-muted fw-bold small">SUBMITTED BY</label>
+                            <p class="mb-0 fw-bold">@Model.Customer?.CompanyName</p>
+                            <small class="text-muted">Contact: @Model.Customer?.ContactName (@Model.Customer?.Email)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted fw-bold small">CREATED AT</label>
+                            <p class="fw-bold mb-0">@Model.CreatedAt</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Actions -->
+        <div class="col-md-4">
+            <!-- Quick Status Change Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Ticket Status & Workflow</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="UpdateStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-secondary">Current Status</label>
+                            <select name="statusId" asp-items="ViewBag.Statuses" class="form-select mb-3"></select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Update Status</button>
+                    </form>
                 </div>
             </div>
 
-            <hr />
-
-            <h5>Description</h5>
-            <div class="p-3 bg-light rounded border">
-                @Model.Description
+            <!-- Priority & Customer Quick Links -->
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <p class="mb-2"><strong>Priority Level:</strong> <span class="badge bg-warning text-dark">@(Model.Priority?.Name ?? "N/A")</span></p>
+                    <p class="mb-0">
+                        <a asp-controller="Customers" asp-action="Details" asp-route-id="@Model.CustomerId" class="btn btn-outline-info btn-sm w-100 mt-2">
+                            View Customer Profile
+                        </a>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
