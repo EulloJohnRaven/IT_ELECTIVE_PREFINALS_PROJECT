@@ -11,7 +11,7 @@ public class LycevmDbContext : DbContext
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
-    public DbSet<Tickets> Tickets => Set<Tickets>();
+    public DbSet<Tickets> Ticket => Set<Ticket>();
     public DbSet<TicketAssignment> TicketAssignments => Set<TicketAssignment>();
     public DbSet<TicketAttachment> TicketAttachments => Set<TicketAttachment>();
     public DbSet<TicketCategory> TicketCategories => Set<TicketCategory>();
