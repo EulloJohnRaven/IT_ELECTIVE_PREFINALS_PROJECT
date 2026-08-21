@@ -98,4 +98,17 @@ public class TicketCategoriesController : Controller
         ViewBag.ParentCategoryId = new SelectList(await _context.TicketCategories.Where(c => c.Id != id).ToListAsync(), "Id", "Name", ticketCategory.ParentCategoryId);
         return View(ticketCategory);
     }
+
+    // GET: TicketCategories/HierarchyReport
+    public async Task<IActionResult> HierarchyReport()
+    {
+        var rootCategories = await _context.TicketCategories
+            .Where(c => c.ParentCategoryId == null)
+            .Include(c => c.Subcategories)
+                .ThenInclude(s => s.Tickets)
+            .Include(c => c.Tickets)
+            .ToListAsync();
+
+        return View(rootCategories);
+    }
 }

@@ -1,0 +1,69 @@
+﻿@model IEnumerable<TicketCategory>
+
+@{
+    ViewData["Title"] = "Category Hierarchy Report";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-diagram-3-fill text-primary"></i> Category Hierarchy Report</h2>
+            <p class="text-muted mb-0">Structural overview of support categories, subcategories, and ticket volume distribution.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to Categories</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            @if (Model != null && Model.Any())
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var root in Model)
+                    {
+                        <div class="list-group-item py-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-1 text-primary fw-bold">
+                                    <i class="bi bi-folder-fill me-2"></i>@root.Name
+                                </h5>
+                                <span class="badge bg-dark">@(root.Tickets?.Count ?? 0) Direct Tickets</span>
+                            </div>
+                            <p class="text-muted small mb-3">@(string.IsNullOrEmpty(root.Description) ? "No description provided." : root.Description)</p>
+
+                            @if (root.Subcategories != null && root.Subcategories.Any())
+                            {
+                                <div class="ms-4 mt-2 border-start ps-3">
+                                    <h6 class="text-secondary fw-bold mb-3">Subcategories:</h6>
+                                    <div class="row g-3">
+                                        @foreach (var sub in root.Subcategories)
+                                        {
+                                            <div class="col-md-6">
+                                                <div class="p-3 bg-light rounded border d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="fw-bold text-dark"><i class="bi bi-file-earmark-text me-1"></i>@sub.Name</span>
+                                                        <br />
+                                                        <small class="text-muted">@(string.IsNullOrEmpty(sub.Description) ? "N/A" : sub.Description)</small>
+                                                    </div>
+                                                    <span class="badge bg-info text-dark">@(sub.Tickets?.Count ?? 0) Tickets</span>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="ms-4 mt-2">
+                                    <small class="text-muted fst-italic">No subcategories defined under this root category.</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-center text-muted py-5">No category hierarchy data available.</p>
+            }
+        </div>
+    </div>
+</div>
