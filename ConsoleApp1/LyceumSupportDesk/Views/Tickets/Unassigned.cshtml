@@ -1,0 +1,90 @@
+﻿@model IEnumerable<Ticket>
+
+@{
+    ViewData["Title"] = "Unassigned Tickets Queue";
+    var employees = ViewBag.Employees as IEnumerable<Employee> ?? Enumerable.Empty<Employee>();
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-exclamation-triangle-fill text-warning"></i> Unassigned Tickets Queue</h2>
+            <p class="text-muted mb-0">Tickets that currently require staff assignment and dispatch.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to All Tickets</a>
+    </div>
+
+    <table class="table table-striped table-bordered align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Ticket ID</th>
+                <th>Subject</th>
+                <th>Customer</th>
+                <th>Category</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th style="width: 280px;">Quick Assign</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var ticket in Model)
+                {
+                    <tr>
+                        <td>#@ticket.Id</td>
+                        <td class="fw-bold">@ticket.Subject</td>
+                        <td>@ticket.Customer?.CompanyName</td>
+                        <td>@(ticket.Category?.Name ?? "N/A")</td>
+                        <td>
+                            @{
+                                var pName = ticket.Priority?.Name ?? "N/A";
+                                var pClass = pName switch
+                                {
+                                    "Critical" => "bg-danger",
+                                    "High" => "bg-warning text-dark",
+                                    "Medium" => "bg-info text-dark",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @pClass">@pName</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">@(ticket.Status?.Name ?? "Open")</span>
+                        </td>
+                        <td>
+                            <form asp-action="Assign" method="post" class="row g-1 align-items-center">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="ticketId" value="@ticket.Id" />
+                                <div class="col-8">
+                                    <select name="employeeId" class="form-select form-select-sm" required>
+                                        <option value="">-- Select Staff --</option>
+                                        @if (ViewBag.EmployeeList != null)
+                                        {
+                                            foreach (var emp in (SelectList)ViewBag.EmployeeList)
+                                            {
+                                                <option value="@emp.Value">@emp.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <button type="submit" class="btn btn-sm btn-primary w-100">Assign</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-5">
+                        <i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>
+                        Fantastic! All tickets currently have staff assigned.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

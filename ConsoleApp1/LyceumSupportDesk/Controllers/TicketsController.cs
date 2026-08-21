@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using LyceumSupportDesk.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
@@ -72,6 +73,27 @@ public class TicketsController : Controller
         return View(ticket);
     }
 
+    // GET: Tickets/Unassigned
+    public async Task<IActionResult> Unassigned()
+    {
+        var unassignedTickets = await _context.Tickets
+            .Include(t => t.Customer)
+            .Include(t => t.Status)
+            .Include(t => t.Priority)
+            .Include(t => t.Category)
+            .Where(t => !t.TicketAssignments.Any())
+            .OrderByDescending(t => t.Id)
+            .ToListAsync();
+
+        ViewBag.EmployeeList = new SelectList(
+            await _context.Employees.Select(e => new { Id = e.Id, FullName = e.FirstName + " " + e.LastName }).ToListAsync(),
+            "Id",
+            "FullName"
+        );
+
+        return View(unassignedTickets);
+    }
+
     // POST: Tickets/UpdateStatus
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -88,5 +110,38 @@ public class TicketsController : Controller
         await _context.SaveChangesAsync();
 
         return RedirectToAction(nameof(Details), new { id = ticket.Id });
+    }
+
+    // POST: Tickets/Assign
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Assign(int ticketId, int employeeId)
+    {
+        var ticket = await _context.Tickets.FindAsync(ticketId);
+        var employee = await _context.Employees.FindAsync(employeeId);
+
+        if (ticket == null || employee == null)
+        {
+            return NotFound();
+        }
+
+        // Check if an assignment already exists
+        var existingAssignment = await _context.TicketAssignments
+            .FirstOrDefaultAsync(ta => ta.TicketId == ticketId && ta.EmployeeId == employeeId);
+
+        if (existingAssignment == null)
+        {
+            var assignment = new TicketAssignment
+            {
+                TicketId = ticketId,
+                EmployeeId = employeeId,
+                AssignedDate = DateTime.Now
+            };
+
+            _context.TicketAssignments.Add(assignment);
+            await _context.SaveChangesAsync();
+        }
+
+        return RedirectToAction(nameof(Unassigned));
     }
 }
