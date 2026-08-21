@@ -1,0 +1,84 @@
+﻿@model Customer
+
+@{
+    ViewData["Title"] = "Customer Profile";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>@Model.CompanyName Profile</h2>
+        <a asp-action="Index" class="btn btn-secondary">Back to Directory</a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header text-white" style="background-color: var(--loa-blue) !important;">
+            <h5 class="mb-0">Company Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Contact Person:</strong> @Model.ContactName</p>
+                    <p><strong>Email Address:</strong> @Model.Email</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Phone Number:</strong> @Model.Phone</p>
+                    <p>
+                        <strong>Account Status:</strong>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Inactive</span>
+                        }
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Tickets Submitted by @Model.CompanyName</h5>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Ticket ID</th>
+                        <th>Subject</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Tickets != null && Model.Tickets.Any())
+                    {
+                        foreach (var ticket in Model.Tickets)
+                        {
+                            <tr>
+                                <td>#@ticket.Id</td>
+                                <td>@ticket.Subject</td>
+                                <td><span class="badge bg-warning text-dark">@(ticket.Priority?.Name ?? "N/A")</span></td>
+                                <td><span class="badge bg-info text-dark">@(ticket.Status?.Name ?? "N/A")</span></td>
+                                <td>@ticket.CreatedAt</td>
+                                <td>
+                                    <a asp-controller="Tickets" asp-action="Details" asp-route-id="@ticket.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No tickets submitted by this customer.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
