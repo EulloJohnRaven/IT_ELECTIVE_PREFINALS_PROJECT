@@ -5,75 +5,102 @@
 }
 
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Ticket #@Model.Id: @Model.Subject</h2>
-        <a asp-action="Index" class="btn btn-secondary">Back to Tickets</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Ticket #@Model.Id: @Model.Subject</h2>
+            <p class="text-muted mb-0">Detailed view and collaborative team management.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to Tickets</a>
     </div>
 
     <div class="row">
-        <!-- Main Details -->
-        <div class="col-md-8">
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header text-white" style="background-color: var(--loa-blue) !important;">
-                    <h5 class="mb-0">Ticket Overview</h5>
+        <!-- Ticket Information Card -->
+        <div class="col-md-7 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Ticket Information</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="text-muted fw-bold small">SUBJECT</label>
-                        <p class="fs-5 fw-bold text-dark">@Model.Subject</p>
+                    <p><strong>Customer:</strong> @Model.Customer?.CompanyName (@Model.Customer?.ContactName)</p>
+                    <p><strong>Category:</strong> @(Model.Category?.Name ?? "N/A")</p>
+                    <p>
+                        <strong>Priority:</strong>
+                        <span class="badge bg-secondary">@(Model.Priority?.Name ?? "N/A")</span>
+                    </p>
+                    <p>
+                        <strong>Current Status:</strong>
+                        <span class="badge bg-primary">@(Model.Status?.Name ?? "Open")</span>
+                    </p>
+                    <hr />
+                    <p class="fw-bold mb-1">Description / Request:</p>
+                    <div class="p-3 bg-light rounded border">
+                        @Model.Description
                     </div>
 
-                    <div class="mb-3">
-                        <label class="text-muted fw-bold small">DESCRIPTION</label>
-                        <p class="p-3 bg-light rounded border text-dark">@Model.Description</p>
-                    </div>
-
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <label class="text-muted fw-bold small">SUBMITTED BY</label>
-                            <p class="mb-0 fw-bold">@Model.Customer?.CompanyName</p>
-                            <small class="text-muted">Contact: @Model.Customer?.ContactName (@Model.Customer?.Email)</small>
+                    <!-- Status Update Form -->
+                    <form asp-action="UpdateStatus" method="post" class="mt-4 row g-2 align-items-center">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small text-secondary">Change Ticket Status</label>
+                            <select name="statusId" asp-items="ViewBag.Statuses" class="form-select form-select-sm"></select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="text-muted fw-bold small">CREATED AT</label>
-                            <p class="fw-bold mb-0">@Model.CreatedAt</p>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-sm btn-dark w-100 mt-4">Update Status</button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
 
-        <!-- Sidebar Actions -->
-        <div class="col-md-4">
-            <!-- Quick Status Change Card -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Ticket Status & Workflow</h5>
+        <!-- Assigned Staff / Collaboration Panel -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header text-white" style="background-color: var(--loa-blue, #0d6efd);">
+                    <h5 class="mb-0"><i class="bi bi-people-fill"></i> Assigned Team Members</h5>
                 </div>
-                <div class="card-body">
-                    <form asp-action="UpdateStatus" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@Model.Id" />
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        @if (Model.TicketAssignments != null && Model.TicketAssignments.Any())
+                        {
+                            <ul class="list-group list-group-flush mb-3">
+                                @foreach (var assignment in Model.TicketAssignments)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        <div>
+                                            <span class="fw-bold d-block">@assignment.Employee?.FirstName @assignment.Employee?.LastName</span>
+                                            <small class="text-muted">@(assignment.Employee?.Department?.Name ?? "Unassigned Dept")</small>
+                                        </div>
+                                        <form asp-action="RemoveAssignment" method="post" class="mb-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="ticketId" value="@Model.Id" />
+                                            <input type="hidden" name="employeeId" value="@assignment.EmployeeId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove Assignee">✕</button>
+                                        </form>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center my-3">No staff members currently assigned to this ticket.</p>
+                        }
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-secondary">Current Status</label>
-                            <select name="statusId" asp-items="ViewBag.Statuses" class="form-select mb-3"></select>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100">Update Status</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Priority & Customer Quick Links -->
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <p class="mb-2"><strong>Priority Level:</strong> <span class="badge bg-warning text-dark">@(Model.Priority?.Name ?? "N/A")</span></p>
-                    <p class="mb-0">
-                        <a asp-controller="Customers" asp-action="Details" asp-route-id="@Model.CustomerId" class="btn btn-outline-info btn-sm w-100 mt-2">
-                            View Customer Profile
-                        </a>
-                    </p>
+                    <!-- Add Assignee Form -->
+                    <div class="border-top pt-3 mt-3">
+                        <form asp-action="AddAssignment" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="ticketId" value="@Model.Id" />
+                            <label class="form-label fw-bold small text-secondary">Assign Additional Staff</label>
+                            <div class="input-group input-group-sm">
+                                <select name="employeeId" asp-items="ViewBag.EmployeeList" class="form-select" required>
+                                    <option value="">-- Select Staff Member --</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary">Assign</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
