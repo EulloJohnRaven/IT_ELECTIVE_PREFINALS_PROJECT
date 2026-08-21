@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 public class TicketsController : Controller
@@ -43,6 +44,41 @@ public class TicketsController : Controller
         {
             return NotFound();
         }
+
+        return View(ticket);
+    }
+
+    // GET: Tickets/Create
+    public async Task<IActionResult> Create()
+    {
+        ViewData["CustomerId"] = new SelectList(await _context.Customers.Where(c => c.IsActive).ToListAsync(), "Id", "CompanyName");
+        ViewData["CategoryId"] = new SelectList(await _context.TicketCategories.ToListAsync(), "Id", "Name");
+        ViewData["PriorityId"] = new SelectList(await _context.TicketPriorities.OrderBy(p => p.SortOrder).ToListAsync(), "Id", "Name");
+        ViewData["StatusId"] = new SelectList(await _context.TicketStatuses.ToListAsync(), "Id", "Name");
+
+        return View();
+    }
+
+    // POST: Tickets/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind("Subject,Description,CustomerId,CategoryId,PriorityId,StatusId")] Ticket ticket)
+    {
+        if (ModelState.IsValid)
+        {
+            string currentTimestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            ticket.CreatedAt = currentTimestamp;
+            ticket.UpdatedAt = currentTimestamp;
+
+            _context.Add(ticket);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        ViewData["CustomerId"] = new SelectList(await _context.Customers.Where(c => c.IsActive).ToListAsync(), "Id", "CompanyName", ticket.CustomerId);
+        ViewData["CategoryId"] = new SelectList(await _context.TicketCategories.ToListAsync(), "Id", "Name", ticket.CategoryId);
+        ViewData["PriorityId"] = new SelectList(await _context.TicketPriorities.OrderBy(p => p.SortOrder).ToListAsync(), "Id", "Name", ticket.PriorityId);
+        ViewData["StatusId"] = new SelectList(await _context.TicketStatuses.ToListAsync(), "Id", "Name", ticket.StatusId);
 
         return View(ticket);
     }

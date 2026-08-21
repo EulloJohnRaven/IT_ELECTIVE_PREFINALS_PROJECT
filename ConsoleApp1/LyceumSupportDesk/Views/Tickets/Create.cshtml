@@ -1,0 +1,80 @@
+﻿@model Ticket
+
+@{
+    ViewData["Title"] = "Create Ticket";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Create New Ticket</h2>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="card-header text-white" style="background-color: var(--loa-blue) !important;">
+            <h5 class="mb-0">Ticket Details</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Subject" class="form-label fw-bold"></label>
+                    <input asp-for="Subject" class="form-control" placeholder="Brief summary of the issue..." />
+                    <span asp-validation-for="Subject" class="text-danger"></span>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="CustomerId" class="form-label fw-bold">Customer</label>
+                        <select asp-for="CustomerId" class="form-select" asp-items="ViewBag.CustomerId">
+                            <option value="">-- Select Customer --</option>
+                        </select>
+                        <span asp-validation-for="CustomerId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="CategoryId" class="form-label fw-bold">Category</label>
+                        <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.CategoryId">
+                            <option value="">-- Select Category --</option>
+                        </select>
+                        <span asp-validation-for="CategoryId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="PriorityId" class="form-label fw-bold">Priority</label>
+                        <select asp-for="PriorityId" class="form-select" asp-items="ViewBag.PriorityId">
+                            <option value="">-- Select Priority --</option>
+                        </select>
+                        <span asp-validation-for="PriorityId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="StatusId" class="form-label fw-bold">Status</label>
+                        <select asp-for="StatusId" class="form-select" asp-items="ViewBag.StatusId">
+                            <option value="">-- Select Status --</option>
+                        </select>
+                        <span asp-validation-for="StatusId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label fw-bold"></label>
+                    <textarea asp-for="Description" class="form-control" rows="5" placeholder="Detailed explanation of the ticket..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
