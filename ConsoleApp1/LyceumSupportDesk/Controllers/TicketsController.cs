@@ -145,6 +145,44 @@ public class TicketsController : Controller
         return View(ticket);
     }
 
+    // GET: Tickets/Delete/5
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        var ticket = await _context.Ticket
+            .Include(t => t.Customer)
+            .Include(t => t.Category)
+            .Include(t => t.Priority)
+            .Include(t => t.Status)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (ticket == null)
+        {
+            return NotFound();
+        }
+
+        return View(ticket);
+    }
+
+    // POST: Tickets/Delete/5
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var ticket = await _context.Ticket.FindAsync(id);
+        if (ticket != null)
+        {
+            _context.Remove(ticket);
+            await _context.SaveChangesAsync();
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
     private bool TicketExists(int id)
     {
         return _context.Ticket.Any(e => e.Id == id);
