@@ -3,6 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 public class TeamMember
 {
+    [Key]
+    public int Id { get; set; }
+
     [Required]
     public int TeamId { get; set; }
 

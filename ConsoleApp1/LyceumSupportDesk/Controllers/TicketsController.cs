@@ -1,7 +1,6 @@
-﻿using LyceumSupportDesk.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using LyceumSupportDesk.Models;
 
 public class TicketsController : Controller
 {
@@ -12,65 +11,40 @@ public class TicketsController : Controller
         _context = context;
     }
 
-    // GET: Tickets (with Search and Filtering)
+    // GET: Tickets
     public async Task<IActionResult> Index(string searchString, int? statusId, int? priorityId)
     {
         var ticketsQuery = _context.Tickets
             .Include(t => t.Customer)
-            .Include(t => t.Status)
+            .Include(t => t.Category)
             .Include(t => t.Priority)
+            .Include(t => t.Status)
             .AsQueryable();
 
-        // Search Filter (Subject or Customer Company/Contact Name)
         if (!string.IsNullOrWhiteSpace(searchString))
         {
             ticketsQuery = ticketsQuery.Where(t =>
                 t.Subject.Contains(searchString) ||
-                t.Customer.CompanyName.Contains(searchString) ||
-                t.Customer.ContactName.Contains(searchString));
+                t.Description.Contains(searchString) ||
+                t.Customer.CompanyName.Contains(searchString));
         }
 
-        // Status Filter
-        if (statusId.HasValue && statusId.Value > 0)
+        if (statusId.HasValue)
         {
             ticketsQuery = ticketsQuery.Where(t => t.StatusId == statusId.Value);
         }
 
-        // Priority Filter
-        if (priorityId.HasValue && priorityId.Value > 0)
+        if (priorityId.HasValue)
         {
             ticketsQuery = ticketsQuery.Where(t => t.PriorityId == priorityId.Value);
         }
 
-        ViewBag.Statuses = new SelectList(await _context.TicketStatuses.ToListAsync(), "Id", "Name", statusId);
-        ViewBag.Priorities = new SelectList(await _context.TicketPriorities.ToListAsync(), "Id", "Name", priorityId);
         ViewBag.CurrentSearch = searchString;
+        ViewBag.Statuses = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.TicketStatuses, "Id", "Name", statusId);
+        ViewBag.Priorities = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.TicketPriorities, "Id", "Name", priorityId);
 
         var tickets = await ticketsQuery.OrderByDescending(t => t.Id).ToListAsync();
         return View(tickets);
-    }
-
-    // GET: Tickets/Details/5
-    public async Task<IActionResult> Details(int? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var ticket = await _context.Tickets
-            .Include(t => t.Customer)
-            .Include(t => t.Status)
-            .Include(t => t.Priority)
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (ticket == null)
-        {
-            return NotFound();
-        }
-
-        ViewBag.Statuses = new SelectList(await _context.TicketStatuses.ToListAsync(), "Id", "Name", ticket.StatusId);
-        return View(ticket);
     }
 
     // GET: Tickets/Unassigned
@@ -78,98 +52,81 @@ public class TicketsController : Controller
     {
         var unassignedTickets = await _context.Tickets
             .Include(t => t.Customer)
-            .Include(t => t.Status)
-            .Include(t => t.Priority)
             .Include(t => t.Category)
+            .Include(t => t.Priority)
+            .Include(t => t.Status)
             .Where(t => !t.TicketAssignments.Any())
-            .OrderByDescending(t => t.Id)
             .ToListAsync();
 
-        ViewBag.EmployeeList = new SelectList(
-            await _context.Employees.Select(e => new { Id = e.Id, FullName = e.FirstName + " " + e.LastName }).ToListAsync(),
-            "Id",
-            "FullName"
-        );
-
+        ViewBag.EmployeeList = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.Employees, "Id", "LastName");
         return View(unassignedTickets);
     }
 
-    // POST: Tickets/UpdateStatus
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateStatus(int id, int statusId)
+    // GET: Tickets/Create
+    public IActionResult Create()
     {
-        var ticket = await _context.Tickets.FindAsync(id);
-        if (ticket == null)
-        {
-            return NotFound();
-        }
+        // Load data for the dropdown menus in the view
+        ViewBag.CustomerId = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.Customers, "Id", "CompanyName");
+        ViewBag.CategoryId = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.TicketCategories, "Id", "Name");
+        ViewBag.PriorityId = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.TicketPriorities, "Id", "Name");
+        ViewBag.StatusId = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.TicketStatuses, "Id", "Name");
 
-        ticket.StatusId = statusId;
-        _context.Update(ticket);
-        await _context.SaveChangesAsync();
-
-        return RedirectToAction(nameof(Details), new { id = ticket.Id });
+        return View();
     }
 
-    // POST: Tickets/Assign
+    // POST: Tickets/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Assign(int ticketId, int employeeId)
+    public async Task<IActionResult> Create([Bind("CustomerId,CategoryId,PriorityId,StatusId,Subject,Description")] Ticket ticket)
     {
-        var ticket = await _context.Tickets.FindAsync(ticketId);
-        var employee = await _context.Employees.FindAsync(employeeId);
+        // 1. Automatically set the timestamps
+        ticket.CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        ticket.UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-        if (ticket == null || employee == null)
+        // 2. Tell the validator to ignore backend-only fields so it doesn't block the save
+        ModelState.Remove("CreatedAt");
+        ModelState.Remove("UpdatedAt");
+        ModelState.Remove("Customer");
+        ModelState.Remove("Category");
+        ModelState.Remove("Priority");
+        ModelState.Remove("Status");
+
+        if (ModelState.IsValid)
         {
-            return NotFound();
-        }
-
-        // Check if an assignment already exists
-        var existingAssignment = await _context.TicketAssignments
-            .FirstOrDefaultAsync(ta => ta.TicketId == ticketId && ta.EmployeeId == employeeId);
-
-        if (existingAssignment == null)
-        {
-            var assignment = new TicketAssignment
-            {
-                TicketId = ticketId,
-                EmployeeId = employeeId,
-                AssignedDate = DateTime.Now
-            };
-
-            _context.TicketAssignments.Add(assignment);
+            _context.Add(ticket);
             await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index)); // Redirect to the ticket list!
         }
 
-        return RedirectToAction(nameof(Unassigned));
+        // If something genuinely goes wrong, reload the dropdowns
+        ViewBag.CustomerId = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.Customers, "Id", "CompanyName", ticket.CustomerId);
+        ViewBag.CategoryId = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.TicketCategories, "Id", "Name", ticket.CategoryId);
+        ViewBag.PriorityId = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.TicketPriorities, "Id", "Name", ticket.PriorityId);
+        ViewBag.StatusId = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.TicketStatuses, "Id", "Name", ticket.StatusId);
+
+        return View(ticket);
     }
 
-    // GET: Tickets/Details/5 (Updated for Multiple Assignees)
+    // GET: Tickets/Details/5
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
 
         var ticket = await _context.Tickets
             .Include(t => t.Customer)
-            .Include(t => t.Status)
-            .Include(t => t.Priority)
             .Include(t => t.Category)
+            .Include(t => t.Priority)
+            .Include(t => t.Status)
             .Include(t => t.TicketAssignments)
                 .ThenInclude(ta => ta.Employee)
                     .ThenInclude(e => e.Department)
+            .Include(t => t.TicketNotes)
             .FirstOrDefaultAsync(m => m.Id == id);
 
         if (ticket == null) return NotFound();
 
-        ViewBag.Statuses = new SelectList(await _context.TicketStatuses.ToListAsync(), "Id", "Name", ticket.StatusId);
-
-        // Pass a list of all employees for the multi-assign dropdown
-        ViewBag.EmployeeList = new SelectList(
-            await _context.Employees.Select(e => new { Id = e.Id, FullName = e.FirstName + " " + e.LastName }).ToListAsync(),
-            "Id",
-            "FullName"
-        );
+        ViewBag.Statuses = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.TicketStatuses, "Id", "Name", ticket.StatusId);
+        ViewBag.EmployeeList = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_context.Employees, "Id", "LastName");
 
         return View(ticket);
     }
@@ -179,26 +136,19 @@ public class TicketsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddAssignment(int ticketId, int employeeId)
     {
-        var ticket = await _context.Tickets.FindAsync(ticketId);
-        var employee = await _context.Employees.FindAsync(employeeId);
-
-        if (ticket == null || employee == null) return NotFound();
-
-        var existingAssignment = await _context.TicketAssignments
-            .FirstOrDefaultAsync(ta => ta.TicketId == ticketId && ta.EmployeeId == employeeId);
-
-        if (existingAssignment == null)
+        if (!_context.TicketAssignments.Any(ta => ta.TicketId == ticketId && ta.EmployeeId == employeeId))
         {
-            _context.TicketAssignments.Add(new TicketAssignment
+            var assignment = new TicketAssignment
             {
                 TicketId = ticketId,
                 EmployeeId = employeeId,
-                AssignedDate = DateTime.Now
-            });
+                AssignedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), // Automatically populate the required date
+                IsPrimary = true
+            };
+            _context.TicketAssignments.Add(assignment);
             await _context.SaveChangesAsync();
         }
-
-        return RedirectToAction(nameof(Details), new { id = ticketId });
+        return RedirectToAction(nameof(Unassigned)); // Keep them in the unassigned queue or send to Details
     }
 
     // POST: Tickets/RemoveAssignment
@@ -214,37 +164,7 @@ public class TicketsController : Controller
             _context.TicketAssignments.Remove(assignment);
             await _context.SaveChangesAsync();
         }
-
         return RedirectToAction(nameof(Details), new { id = ticketId });
-    }
-
-    // GET: Tickets/Details/5 (Updated to include TicketNotes)
-    public async Task<IActionResult> Details(int? id)
-    {
-        if (id == null) return NotFound();
-
-        var ticket = await _context.Tickets
-            .Include(t => t.Customer)
-            .Include(t => t.Status)
-            .Include(t => t.Priority)
-            .Include(t => t.Category)
-            .Include(t => t.TicketAssignments)
-                .ThenInclude(ta => ta.Employee)
-                    .ThenInclude(e => e.Department)
-            .Include(t => t.TicketNotes) // Include ticket notes/comments
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (ticket == null) return NotFound();
-
-        ViewBag.Statuses = new SelectList(await _context.TicketStatuses.ToListAsync(), "Id", "Name", ticket.StatusId);
-
-        ViewBag.EmployeeList = new SelectList(
-            await _context.Employees.Select(e => new { Id = e.Id, FullName = e.FirstName + " " + e.LastName }).ToListAsync(),
-            "Id",
-            "FullName"
-        );
-
-        return View(ticket);
     }
 
     // POST: Tickets/AddNote
@@ -252,24 +172,34 @@ public class TicketsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddNote(int ticketId, string content)
     {
-        if (string.IsNullOrWhiteSpace(content))
+        if (!string.IsNullOrWhiteSpace(content))
         {
-            return RedirectToAction(nameof(Details), new { id = ticketId });
+            var note = new TicketNote
+            {
+                TicketId = ticketId,
+                Content = content,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.TicketNotes.Add(note);
+            await _context.SaveChangesAsync();
         }
-
-        var ticket = await _context.Tickets.FindAsync(ticketId);
-        if (ticket == null) return NotFound();
-
-        var note = new TicketNote
-        {
-            TicketId = ticketId,
-            Content = content,
-            CreatedAt = DateTime.Now
-        };
-
-        _context.TicketNotes.Add(note);
-        await _context.SaveChangesAsync();
-
         return RedirectToAction(nameof(Details), new { id = ticketId });
+    }
+
+    // POST: Tickets/UpdateStatus
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateStatus(int id, int statusId)
+    {
+        var ticket = await _context.Tickets.FindAsync(id);
+        if (ticket != null)
+        {
+            ticket.StatusId = statusId;
+            ticket.UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"); // Ensure required timestamp is updated
+
+            _context.Update(ticket);
+            await _context.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Details), new { id });
     }
 }

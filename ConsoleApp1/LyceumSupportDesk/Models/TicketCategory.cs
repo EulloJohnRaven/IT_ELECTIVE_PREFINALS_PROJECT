@@ -16,6 +16,9 @@ public class TicketCategory
 
     [ForeignKey("ParentCategoryId")]
     public TicketCategory? ParentCategory { get; set; }
-    public ICollection<TicketCategory> SubCategories { get; set; } = new List<TicketCategory>();
+
+    // Fixed: Lowercase 'c' in Subcategories to match your controllers
+    public ICollection<TicketCategory> Subcategories { get; set; } = new List<TicketCategory>();
+
     public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 }

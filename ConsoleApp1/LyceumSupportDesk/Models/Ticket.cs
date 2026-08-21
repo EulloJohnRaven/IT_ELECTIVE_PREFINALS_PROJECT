@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using LyceumSupportDesk.Models;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 public class Ticket
@@ -52,4 +53,6 @@ public class Ticket
     public ICollection<TicketComment> TicketComments { get; set; } = new List<TicketComment>();
     public ICollection<TicketAttachment> TicketAttachments { get; set; } = new List<TicketAttachment>();
     public ICollection<TicketTag> TicketTags { get; set; } = new List<TicketTag>();
+
+    public ICollection<TicketNote> TicketNotes { get; set; } = new List<TicketNote>();
 }

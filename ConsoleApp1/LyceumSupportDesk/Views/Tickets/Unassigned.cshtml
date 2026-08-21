@@ -4,7 +4,6 @@
     ViewData["Title"] = "Unassigned Tickets Queue";
     var employees = ViewBag.Employees as IEnumerable<Employee> ?? Enumerable.Empty<Employee>();
 }
-
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -53,7 +52,7 @@
                             <span class="badge bg-primary">@(ticket.Status?.Name ?? "Open")</span>
                         </td>
                         <td>
-                            <form asp-action="Assign" method="post" class="row g-1 align-items-center">
+                            <form asp-action="AddAssignment" method="post" class="row g-1 align-items-center">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="ticketId" value="@ticket.Id" />
                                 <div class="col-8">
