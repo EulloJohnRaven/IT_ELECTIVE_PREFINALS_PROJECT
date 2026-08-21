@@ -44,6 +44,23 @@ public class DepartmentsController : Controller
         return View(department);
     }
 
+    // GET: Departments/Workload/5
+    public async Task<IActionResult> Workload(int? id)
+    {
+        if (id == null) return NotFound();
+
+        var department = await _context.Departments
+            .Include(d => d.Employees)
+                .ThenInclude(e => e.TicketAssignments)
+                    .ThenInclude(ta => ta.Ticket)
+                        .ThenInclude(t => t.Status)
+            .FirstOrDefaultAsync(d => d.Id == id);
+
+        if (department == null) return NotFound();
+
+        return View(department);
+    }
+
     // GET: Departments/Create
     public IActionResult Create()
     {
@@ -102,7 +119,6 @@ public class DepartmentsController : Controller
     }
 }
 
-// Inline View Model for Department Summary Analytics
 public class DepartmentSummaryViewModel
 {
     public int Id { get; set; }
