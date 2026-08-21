@@ -3,6 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 public class TicketAssignment
 {
+    [Key]
+    public int Id { get; set; }
+
     [Required]
     public int TicketId { get; set; }
 
