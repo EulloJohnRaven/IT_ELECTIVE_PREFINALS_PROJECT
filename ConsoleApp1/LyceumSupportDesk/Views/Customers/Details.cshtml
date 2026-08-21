@@ -1,29 +1,31 @@
 ﻿@model Customer
 
 @{
-    ViewData["Title"] = "Customer Profile";
+    ViewData["Title"] = $"{Model.CompanyName} Details";
 }
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>@Model.CompanyName Profile</h2>
-        <a asp-action="Index" class="btn btn-secondary">Back to Directory</a>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning me-1">Edit Profile</a>
+            <a asp-action="Index" class="btn btn-secondary">Back to Customers</a>
+        </div>
     </div>
 
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header text-white" style="background-color: var(--loa-blue) !important;">
-            <h5 class="mb-0">Company Information</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Contact Person:</strong> @Model.ContactName</p>
-                    <p><strong>Email Address:</strong> @Model.Email</p>
+    <div class="row">
+        <!-- Customer Details Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Customer Metadata</h5>
                 </div>
-                <div class="col-md-6">
-                    <p><strong>Phone Number:</strong> @Model.Phone</p>
-                    <p>
-                        <strong>Account Status:</strong>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Contact Name:</strong> @Model.ContactName</p>
+                    <p class="mb-2"><strong>Email:</strong> <a href="mailto:@Model.Email">@Model.Email</a></p>
+                    <p class="mb-2"><strong>Phone:</strong> @(string.IsNullOrEmpty(Model.Phone) ? "N/A" : Model.Phone)</p>
+                    <p class="mb-0">
+                        <strong>Status:</strong>
                         @if (Model.IsActive)
                         {
                             <span class="badge bg-success">Active</span>
@@ -36,49 +38,48 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="card shadow-sm border-0 mb-5">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Tickets Submitted by @Model.CompanyName</h5>
-        </div>
-        <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Ticket ID</th>
-                        <th>Subject</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th>Created At</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <!-- Associated Support Tickets Card -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header text-white" style="background-color: var(--loa-blue, #0d6efd);">
+                    <h5 class="mb-0">Associated Tickets</h5>
+                </div>
+                <div class="card-body">
                     @if (Model.Tickets != null && Model.Tickets.Any())
                     {
-                        foreach (var ticket in Model.Tickets)
-                        {
-                            <tr>
-                                <td>#@ticket.Id</td>
-                                <td>@ticket.Subject</td>
-                                <td><span class="badge bg-warning text-dark">@(ticket.Priority?.Name ?? "N/A")</span></td>
-                                <td><span class="badge bg-info text-dark">@(ticket.Status?.Name ?? "N/A")</span></td>
-                                <td>@ticket.CreatedAt</td>
-                                <td>
-                                    <a asp-controller="Tickets" asp-action="Details" asp-route-id="@ticket.Id" class="btn btn-sm btn-outline-primary">View</a>
-                                </td>
-                            </tr>
-                        }
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Ticket ID</th>
+                                    <th>Subject</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var ticket in Model.Tickets)
+                                {
+                                    <tr>
+                                        <td>#@ticket.Id</td>
+                                        <td>@ticket.Subject</td>
+                                        <td><span class="badge bg-secondary">@(ticket.Priority?.Name ?? "N/A")</span></td>
+                                        <td><span class="badge bg-info text-dark">@(ticket.Status?.Name ?? "N/A")</span></td>
+                                        <td>
+                                            <a asp-controller="Tickets" asp-action="Details" asp-route-id="@ticket.Id" class="btn btn-sm btn-outline-primary">View Ticket</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     }
                     else
                     {
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-3">No tickets submitted by this customer.</td>
-                        </tr>
+                        <p class="text-muted my-2 text-center">No submitted tickets found for this customer.</p>
                     }
-                </tbody>
-            </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>

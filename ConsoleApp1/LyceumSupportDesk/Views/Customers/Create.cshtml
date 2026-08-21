@@ -6,54 +6,50 @@
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Register New Customer</h2>
-        <a asp-action="Index" class="btn btn-secondary">Back to Directory</a>
+        <h2>Add New Customer</h2>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
     </div>
 
-    <div class="card shadow-sm border-0 mb-5">
-        <div class="card-header text-white" style="background-color: var(--loa-blue) !important;">
-            <h5 class="mb-0">Customer Profile Details</h5>
-        </div>
+    <div class="card shadow-sm border-0">
         <div class="card-body">
             <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label asp-for="CompanyName" class="form-label fw-bold">Company Name</label>
-                        <input asp-for="CompanyName" class="form-control" placeholder="Acme Corporation" />
-                        <span asp-validation-for="CompanyName" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="ContactName" class="form-label fw-bold">Contact Name</label>
-                        <input asp-for="ContactName" class="form-control" placeholder="John Doe" />
-                        <span asp-validation-for="ContactName" class="text-danger"></span>
-                    </div>
+                <div class="mb-3">
+                    <label asp-for="CompanyName" class="form-label fw-bold">Company Name</label>
+                    <input asp-for="CompanyName" class="form-control" placeholder="Enter company name..." />
+                    <span asp-validation-for="CompanyName" class="text-danger"></span>
                 </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="ContactName" class="form-label fw-bold">Contact Name</label>
+                    <input asp-for="ContactName" class="form-control" placeholder="Enter primary contact name..." />
+                    <span asp-validation-for="ContactName" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <label asp-for="Email" class="form-label fw-bold">Email Address</label>
-                        <input asp-for="Email" type="email" class="form-control" placeholder="contact@company.com" />
+                        <input asp-for="Email" type="email" class="form-control" placeholder="name@company.com" />
                         <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
-                    <div class="col-md-6">
+
+                    <div class="col-md-6 mb-3">
                         <label asp-for="Phone" class="form-label fw-bold">Phone Number</label>
-                        <input asp-for="Phone" class="form-control" placeholder="+63 912 345 6789" />
+                        <input asp-for="Phone" class="form-control" placeholder="(Optional) Phone number..." />
                         <span asp-validation-for="Phone" class="text-danger"></span>
                     </div>
                 </div>
 
                 <div class="form-check mb-4">
-                    <input class="form-check-input" type="checkbox" asp-for="IsActive" checked />
-                    <label class="form-check-label fw-bold" asp-for="IsActive">
-                        Active Account
-                    </label>
+                    <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                    <label asp-for="IsActive" class="form-check-label fw-bold">Active Customer</label>
                 </div>
 
-                <div class="d-flex justify-content-end gap-2">
-                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                <div>
                     <button type="submit" class="btn btn-primary">Save Customer</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
                 </div>
             </form>
         </div>
