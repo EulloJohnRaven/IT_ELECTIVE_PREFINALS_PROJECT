@@ -144,4 +144,77 @@ public class TicketsController : Controller
 
         return RedirectToAction(nameof(Unassigned));
     }
+
+    // GET: Tickets/Details/5 (Updated for Multiple Assignees)
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null) return NotFound();
+
+        var ticket = await _context.Tickets
+            .Include(t => t.Customer)
+            .Include(t => t.Status)
+            .Include(t => t.Priority)
+            .Include(t => t.Category)
+            .Include(t => t.TicketAssignments)
+                .ThenInclude(ta => ta.Employee)
+                    .ThenInclude(e => e.Department)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (ticket == null) return NotFound();
+
+        ViewBag.Statuses = new SelectList(await _context.TicketStatuses.ToListAsync(), "Id", "Name", ticket.StatusId);
+
+        // Pass a list of all employees for the multi-assign dropdown
+        ViewBag.EmployeeList = new SelectList(
+            await _context.Employees.Select(e => new { Id = e.Id, FullName = e.FirstName + " " + e.LastName }).ToListAsync(),
+            "Id",
+            "FullName"
+        );
+
+        return View(ticket);
+    }
+
+    // POST: Tickets/AddAssignment
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddAssignment(int ticketId, int employeeId)
+    {
+        var ticket = await _context.Tickets.FindAsync(ticketId);
+        var employee = await _context.Employees.FindAsync(employeeId);
+
+        if (ticket == null || employee == null) return NotFound();
+
+        var existingAssignment = await _context.TicketAssignments
+            .FirstOrDefaultAsync(ta => ta.TicketId == ticketId && ta.EmployeeId == employeeId);
+
+        if (existingAssignment == null)
+        {
+            _context.TicketAssignments.Add(new TicketAssignment
+            {
+                TicketId = ticketId,
+                EmployeeId = employeeId,
+                AssignedDate = DateTime.Now
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        return RedirectToAction(nameof(Details), new { id = ticketId });
+    }
+
+    // POST: Tickets/RemoveAssignment
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveAssignment(int ticketId, int employeeId)
+    {
+        var assignment = await _context.TicketAssignments
+            .FirstOrDefaultAsync(ta => ta.TicketId == ticketId && ta.EmployeeId == employeeId);
+
+        if (assignment != null)
+        {
+            _context.TicketAssignments.Remove(assignment);
+            await _context.SaveChangesAsync();
+        }
+
+        return RedirectToAction(nameof(Details), new { id = ticketId });
+    }
 }
