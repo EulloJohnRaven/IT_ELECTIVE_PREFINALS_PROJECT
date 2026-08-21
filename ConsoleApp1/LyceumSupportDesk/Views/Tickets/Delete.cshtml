@@ -1,0 +1,51 @@
+﻿@model Ticket
+
+@{
+    ViewData["Title"] = "Delete Ticket";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Delete Ticket #@Model.Id</h2>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+
+    <div class="alert alert-danger shadow-sm" role="alert">
+        <h5 class="alert-heading fw-bold mb-1">⚠️ Are you sure you want to delete this ticket?</h5>
+        <p class="mb-0">This operation cannot be undone. Please review the ticket details below before confirming.</p>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header text-white" style="background-color: var(--loa-blue) !important;">
+            <h5 class="mb-0">@Model.Subject</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <strong>Customer:</strong> @(Model.Customer?.CompanyName ?? "N/A")<br />
+                    <strong>Category:</strong> @(Model.Category?.Name ?? "N/A")
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <strong>Status:</strong> <span class="badge bg-info text-dark">@(Model.Status?.Name ?? "N/A")</span><br />
+                    <strong>Priority:</strong> <span class="badge bg-warning text-dark">@(Model.Priority?.Name ?? "N/A")</span><br />
+                    <strong>Created:</strong> @Model.CreatedAt
+                </div>
+            </div>
+
+            <hr />
+
+            <h5>Description</h5>
+            <div class="p-3 bg-light rounded border mb-4">
+                @Model.Description
+            </div>
+
+            <form asp-action="Delete" method="post">
+                <input type="hidden" asp-for="Id" />
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-danger fw-bold">Confirm Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
