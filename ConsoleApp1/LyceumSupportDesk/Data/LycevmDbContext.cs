@@ -1,36 +1,55 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-public class LycevmDbContext : DbContext
+namespace LyceumSupportDesk.Models
 {
-    public LycevmDbContext(DbContextOptions<LycevmDbContext> options) : base(options) { }
-
-    public DbSet<Customer> Customers => Set<Customer>();
-    public DbSet<Department> Departments => Set<Department>();
-    public DbSet<Employee> Employees => Set<Employee>();
-    public DbSet<Tag> Tags => Set<Tag>();
-    public DbSet<Team> Teams => Set<Team>();
-    public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
-    public DbSet<Ticket> Tickets => Set<Ticket>();
-    public DbSet<TicketAssignment> TicketAssignments => Set<TicketAssignment>();
-    public DbSet<TicketAttachment> TicketAttachments => Set<TicketAttachment>();
-    public DbSet<TicketCategory> TicketCategories => Set<TicketCategory>();
-    public DbSet<TicketComment> TicketComments => Set<TicketComment>();
-    public DbSet<TicketPriority> TicketPriorities => Set<TicketPriority>();
-    public DbSet<TicketStatus> TicketStatuses => Set<TicketStatus>();
-    public DbSet<TicketTag> TicketTags => Set<TicketTag>();
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public class LycevmDbContext : DbContext
     {
-        base.OnModelCreating(modelBuilder);
+        public LycevmDbContext(DbContextOptions<LycevmDbContext> options)
+            : base(options)
+        {
+        }
 
-        modelBuilder.Entity<TeamMember>()
-            .HasKey(tm => new { tm.TeamId, tm.EmployeeId });
+        // DbSets representing your database tables
+        public DbSet<Customer> Customers { get; set; }
+        public DbSet<Department> Departments { get; set; }
+        public DbSet<Employee> Employees { get; set; }
+        public DbSet<Ticket> Tickets { get; set; }
+        public DbSet<TicketCategory> TicketCategories { get; set; }
+        public DbSet<TicketStatus> TicketStatuses { get; set; }
+        public DbSet<TicketPriority> TicketPriorities { get; set; }
+        public DbSet<TicketAssignment> TicketAssignments { get; set; }
+        public DbSet<Tag> Tags { get; set; }
+        public DbSet<TicketTag> TicketTags { get; set; }
+        public DbSet<TicketNote> TicketNotes { get; set; }
 
-        modelBuilder.Entity<TicketAssignment>()
-            .HasKey(ta => new { ta.TicketId, ta.EmployeeId });
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            // 1. Configure Self-Referencing Relationship for TicketCategory
+            // A category can have one Parent Category, and a Parent Category can have many Subcategories.
+            modelBuilder.Entity<TicketCategory>()
+                .HasOne(c => c.ParentCategory)
+                .WithMany(c => c.Subcategories)
+                .HasForeignKey(c => c.ParentCategoryId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes that wipe out entire category trees
 
-        modelBuilder.Entity<Team>()
-            .HasIndex(t => new { t.DepartmentId, t.Name })
-            .IsUnique();
+            // 2. Configure Composite Primary Key for TicketTag (Join Table)
+            // The combination of TicketId and TagId must be unique.
+            modelBuilder.Entity<TicketTag>()
+                .HasKey(tt => new { tt.TicketId, tt.TagId });
+
+            // Ensure the relationships for the TicketTag join table are explicitly defined
+            modelBuilder.Entity<TicketTag>()
+                .HasOne(tt => tt.Ticket)
+                .WithMany(t => t.TicketTags)
+                .HasForeignKey(tt => tt.TicketId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TicketTag>()
+                .HasOne(tt => tt.Tag)
+                .WithMany(t => t.TicketTags)
+                .HasForeignKey(tt => tt.TagId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
     }
 }
