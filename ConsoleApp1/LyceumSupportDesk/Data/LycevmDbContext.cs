@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Reflection.Emit;
 
 public class LycevmDbContext : DbContext
 {
@@ -11,7 +10,7 @@ public class LycevmDbContext : DbContext
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
-    public DbSet<Tickets> Ticket => Set<Ticket>();
+    public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<TicketAssignment> TicketAssignments => Set<TicketAssignment>();
     public DbSet<TicketAttachment> TicketAttachments => Set<TicketAttachment>();
     public DbSet<TicketCategory> TicketCategories => Set<TicketCategory>();
@@ -24,15 +23,12 @@ public class LycevmDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // 1. TeamMembers Composite Primary Key (TeamId, EmployeeId)
         modelBuilder.Entity<TeamMember>()
             .HasKey(tm => new { tm.TeamId, tm.EmployeeId });
 
-        // 2. TicketAssignments Composite Primary Key (TicketId, EmployeeId)
         modelBuilder.Entity<TicketAssignment>()
             .HasKey(ta => new { ta.TicketId, ta.EmployeeId });
 
-        // 3. Unique Index constraint for Teams (DepartmentId, Name)
         modelBuilder.Entity<Team>()
             .HasIndex(t => new { t.DepartmentId, t.Name })
             .IsUnique();

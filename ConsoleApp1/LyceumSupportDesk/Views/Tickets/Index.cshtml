@@ -1,47 +1,95 @@
 ﻿@model IEnumerable<Ticket>
 
 @{
-    ViewData["Title"] = "Tickets Management";
+    ViewData["Title"] = "Support Tickets";
 }
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Tickets List</h2>
-        <a asp-action="Create" class="btn btn-primary">Create New Ticket</a>
+        <h2>Support Tickets Directory</h2>
+        <a asp-action="Create" class="btn btn-primary">+ Create New Ticket</a>
     </div>
 
-    <table class="table table-striped table-bordered">
+    <!-- Search & Filter Form -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small text-secondary">Search</label>
+                    <input type="text" name="searchString" value="@ViewBag.CurrentSearch" class="form-control" placeholder="Search subject or company..." />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-secondary">Status</label>
+                    <select name="statusId" asp-items="ViewBag.Statuses" class="form-select">
+                        <option value="">All Statuses</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-secondary">Priority</label>
+                    <select name="priorityId" asp-items="ViewBag.Priorities" class="form-select">
+                        <option value="">All Priorities</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-dark w-100">Filter</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary" title="Clear Filters">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tickets Table -->
+    <table class="table table-striped table-bordered align-middle">
         <thead class="table-dark">
             <tr>
-                <th>ID</th>
+                <th>Ticket ID</th>
                 <th>Subject</th>
                 <th>Customer</th>
-                <th>Category</th>
                 <th>Priority</th>
                 <th>Status</th>
                 <th>Created At</th>
-                <th>Actions</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
             @if (Model != null && Model.Any())
             {
-                foreach (var item in Model)
+                foreach (var ticket in Model)
                 {
                     <tr>
-                        <td>@item.Id</td>
-                        <td>@item.Subject</td>
-                        <td>@item.Customer?.CompanyName</td>
-                        <td>@item.Category?.Name</td>
-                        <td>@item.Priority?.Name</td>
-                        <td>@item.Status?.Name</td>
-                        <td>@item.CreatedAt</td>
+                        <td>#@ticket.Id</td>
+                        <td class="fw-bold">@ticket.Subject</td>
+                        <td>@ticket.Customer?.CompanyName</td>
                         <td>
-                            <div class="btn-group btn-group-sm" role="group">
-                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info">Details</a>
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">Edit</a>
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Delete</a>
-                            </div>
+                            @{
+                                var pName = ticket.Priority?.Name ?? "N/A";
+                                var pClass = pName switch
+                                {
+                                    "Critical" => "bg-danger",
+                                    "High" => "bg-warning text-dark",
+                                    "Medium" => "bg-info text-dark",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @pClass">@pName</span>
+                        </td>
+                        <td>
+                            @{
+                                var sName = ticket.Status?.Name ?? "N/A";
+                                var sClass = sName switch
+                                {
+                                    "Open" => "bg-primary",
+                                    "In Progress" => "bg-warning text-dark",
+                                    "Resolved" => "bg-success",
+                                    "Closed" => "bg-secondary",
+                                    _ => "bg-light text-dark"
+                                };
+                            }
+                            <span class="badge @sClass">@sName</span>
+                        </td>
+                        <td>@ticket.CreatedAt</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@ticket.Id" class="btn btn-sm btn-info">View Details</a>
                         </td>
                     </tr>
                 }
@@ -49,7 +97,7 @@
             else
             {
                 <tr>
-                    <td colspan="8" class="text-center text-muted">No tickets found.</td>
+                    <td colspan="7" class="text-center text-muted py-4">No tickets match the selected filters.</td>
                 </tr>
             }
         </tbody>
