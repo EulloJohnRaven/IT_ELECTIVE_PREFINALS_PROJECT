@@ -82,4 +82,71 @@ public class TicketsController : Controller
 
         return View(ticket);
     }
+
+    // GET: Tickets/Edit/5
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        var ticket = await _context.Ticket.FindAsync(id);
+        if (ticket == null)
+        {
+            return NotFound();
+        }
+
+        ViewData["CustomerId"] = new SelectList(await _context.Customers.Where(c => c.IsActive).ToListAsync(), "Id", "CompanyName", ticket.CustomerId);
+        ViewData["CategoryId"] = new SelectList(await _context.TicketCategories.ToListAsync(), "Id", "Name", ticket.CategoryId);
+        ViewData["PriorityId"] = new SelectList(await _context.TicketPriorities.OrderBy(p => p.SortOrder).ToListAsync(), "Id", "Name", ticket.PriorityId);
+        ViewData["StatusId"] = new SelectList(await _context.TicketStatuses.ToListAsync(), "Id", "Name", ticket.StatusId);
+
+        return View(ticket);
+    }
+
+    // POST: Tickets/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, [Bind("Id,Subject,Description,CustomerId,CategoryId,PriorityId,StatusId,CreatedAt")] Ticket ticket)
+    {
+        if (id != ticket.Id)
+        {
+            return NotFound();
+        }
+
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                ticket.UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                _context.Update(ticket);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TicketExists(ticket.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        ViewData["CustomerId"] = new SelectList(await _context.Customers.Where(c => c.IsActive).ToListAsync(), "Id", "CompanyName", ticket.CustomerId);
+        ViewData["CategoryId"] = new SelectList(await _context.TicketCategories.ToListAsync(), "Id", "Name", ticket.CategoryId);
+        ViewData["PriorityId"] = new SelectList(await _context.TicketPriorities.OrderBy(p => p.SortOrder).ToListAsync(), "Id", "Name", ticket.PriorityId);
+        ViewData["StatusId"] = new SelectList(await _context.TicketStatuses.ToListAsync(), "Id", "Name", ticket.StatusId);
+
+        return View(ticket);
+    }
+
+    private bool TicketExists(int id)
+    {
+        return _context.Ticket.Any(e => e.Id == id);
+    }
 }
